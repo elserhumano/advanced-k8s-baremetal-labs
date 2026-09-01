@@ -1,0 +1,16 @@
+# Kubernetes & Talos Secrets
+*.kubeconfig
+kubeconfig
+talosconfig
+*.token
+*.pem
+*.key
+
+# Vagrant and Provider assets
+.vagrant/
+*.log
+
+# OS & IDE debris
+.DS_Store
+.vscode/
+

@@ -1,0 +1,37 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+Vagrant.require_version "> 2.2"
+require 'yaml'
+
+servers = YAML.load_file('configs/server-config.yml')
+
+Vagrant.configure("2") do |config|
+  servers.each do |server|
+    config.vm.define server["name"] do |machine|
+      machine.vm.box = server["box"]
+      machine.vm.box_version = server["box_version"]
+      
+      # 1. DESACTIVAR EL NAT OCULTO DE VAGRANT
+      # Esto hace que el Adaptador 1 de VirtualBox NO sea NAT
+      machine.vm.network "private_network", ip: server["ip"], adapter: 1
+
+      machine.vm.communicator = "none"
+      machine.ssh.insert_key = false
+
+      machine.vm.provider "virtualbox" do |v|
+        v.name = server["name"]
+        v.memory = server["memory"]
+        v.cpus = server["cpus"]
+        v.customize ["modifyvm", :id, "--groups", server["groups"]]
+        v.customize ["modifyvm", :id, "--firmware", "efi"]
+        
+        # 2. INYECTAR EL YAML ANTES DE ARRANCAR
+        # Talos leerá esto de VirtualBox y se asignará la IP estática solo
+        if File.exist?("controlplane.yaml")
+          v.customize ["guestproperty", "set", :id, "/talos/config", File.read("controlplane.yaml")]
+        end
+      end
+    end
+  end
+end
